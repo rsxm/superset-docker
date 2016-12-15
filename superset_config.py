@@ -2,8 +2,11 @@ import json
 import os
 
 # ---------------------------------------------------------
-# Caravel specific config
+# Superset specific config
 # ---------------------------------------------------------
+# Whether to run the web server in debug mode or not
+DEBUG = os.getenv("DEBUG", "0") in ("True", "true", "1")
+
 ROW_LIMIT = int(os.getenv("ROW_LIMIT", 5000))
 WEBSERVER_THREADS = int(os.getenv("WEBSERVER_THREADS", 8))
 
@@ -23,11 +26,12 @@ SQLALCHEMY_DATABASE_URI = os.getenv(
 
 
 SUPERSET_ENABLE_PROXY_FIX = True
-SUPERSET_AUTH_TYPE = os.getenv("AUTH_TYPE", "REMOTE_USER_AUTH")
 
 # Negated by AUT_REMOTE_USER
 SUPERSET_PUBLIC_ROLE_LIKE_GAMMA = False
 SUPERSET_ENABLE_CORS = False
+
+SUPERSET_AUTH_TYPE = os.getenv("AUTH_TYPE", "REMOTE_USER_AUTH")
 
 if SUPERSET_AUTH_TYPE == "REMOTE_USER_AUTH":
     from flask_appbuilder.security.sqla.manager import SecurityManager
@@ -35,11 +39,11 @@ if SUPERSET_AUTH_TYPE == "REMOTE_USER_AUTH":
     from flask_appbuilder.security.sqla.models import User
     from flask_appbuilder.security.manager import AUTH_REMOTE_USER
 
-    class MySecurityManager(SecurityManager):
+    class RemoteUserSecurityManager(SecurityManager):
         user_model = User
         userdbmodelview = UserRemoteUserModelView
 
-    CUSTOM_SECURITY_MANAGER = MySecurityManager
+    CUSTOM_SECURITY_MANAGER = RemoteUserSecurityManager
     AUTH_TYPE = AUTH_REMOTE_USER
 
 
@@ -55,7 +59,7 @@ class RemoteUserMiddleware(object):
             environ['REMOTE_USER'] = user
 
         else:
-            if app.config.get('DEBUG'):
+            if DEBUG:
                 # TODO: Massive data security flaw, only for development!!
                 environ['REMOTE_USER'] = 'admin'
             else:
@@ -81,9 +85,6 @@ CSRF_ENABLED = os.getenv("CSRF_ENABLED", "1") in ("True", "true", "1")
 
 # Set this API key to enable Mapbox visualizations
 MAPBOX_API_KEY = os.getenv("MAPBOX_API_KEY", "")
-
-# Whether to run the web server in debug mode or not
-DEBUG = os.getenv("DEBUG", "0") in ("True", "true", "1")
 
 # try:
 #     CACHE_CONFIG = json.loads(os.getenv("CACHE_CONFIG", "{}"))
