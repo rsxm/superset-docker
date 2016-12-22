@@ -8,32 +8,35 @@ services:
     volumes:
       - redis:/data
 
-  postgres:
-    image: postgres:9.5
-    env_file:
-      - ${PWD}/.local/postgres.env
+  mysql:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: superset
+      MYSQL_DATABASE: superset
+      MYSQL_USER: superset
+      MYSQL_PASSWORD: superset
+    volumes:
+      - mysql:/var/lib/mysql
     networks:
       - internal
-    volumes:
-      - "dbdata:/var/lib/postgresql/data"
     ports:
-      - 5432
-    restart: on-failure:2
+      - "3306:3306"
+    restart: always
 
   superset:
     build:
       context: .
       dockerfile: Dockerfile
-    image: gauseng/superset:v0.15.0-production
+    image: gauseng/superset:v0.15.1-production
     restart: always
     depends_on:
-      - postgres
+      - mysql
       - redis
     networks:
       - internal
       - plant_secure
     external_links:
-      - tpam_postgres_1:plant_secure_db
+      - plantsecure_postgres_1:plant_secure_db
     volumes:
       - "assets:/env/lib/python3.5/site-packages/superset/static"
     environment:
@@ -41,13 +44,13 @@ services:
       SUPERSET_ENABLE_PROXY_FIX: "True"
       SUPERSET_AUTH_TYPE: "AUTH_REMOTE_USER"
       SECRET_KEY: thisISaSECRET_1234
-      SQLALCHEMY_DATABASE_URI: postgresql+psycopg2://postgres:postgres@postgres:5432/postgres
+      SQLALCHEMY_DATABASE_URI: mysql://superset:superset@mysql:3306/superset
     ports:
       - "8088:8088"
     command: "superset runserver -d"
 
 volumes:
-  dbdata:
+  mysql:
     external: false
   redis:
     external: false
@@ -59,4 +62,4 @@ networks:
     external: false
   plant_secure:
     external:
-      name: tpam_internal
+      name: plantsecure_internal

@@ -1,7 +1,7 @@
 FROM gauseng/superset:v0.15.0
 
 # Install
-ENV SUPERSET_VERSION 0.15.0
+ENV SUPERSET_VERSION 0.15.1
 
 RUN adduser --disabled-password --gecos '' --no-create-home superset
 
